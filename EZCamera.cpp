@@ -5,6 +5,9 @@
 #include <QWidget>
 #include <QTimer>
 #include <iostream>
+#include <string>
+#include <regex>
+#include <algorithm>
 #include "EZCameraDeviceErrorEvent.h"
 
 #ifdef Q_OS_WIN
@@ -1134,8 +1137,12 @@ QList<CameraInfo> EZCamera::getAvailableCameraNames()
 		UINT32 cchLink;
 		ppDevices[i]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &szSymbolicLink, &cchLink);
 		QString strSymbolicLink = QString::fromWCharArray(szSymbolicLink);
+		std::string strVid, strPid;
+		EZCamera::extractVidPid(strSymbolicLink.toStdString(), strVid, strPid);
+
 		CoTaskMemFree(szSymbolicLink);
 
+		strName = strName + "_" + QString::fromStdString(strVid) + "_" + QString::fromStdString(strPid);
 		lst.append(CameraInfo(strName, strSymbolicLink));
 	}
 
@@ -1197,6 +1204,16 @@ bool EZCamera::CreateVideoDeviceSource(void** ppSource)
 		pActivate->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, &szFriendlyName, &cchName);
 		QString strName = QString::fromWCharArray(szFriendlyName);
 		CoTaskMemFree(szFriendlyName);
+
+		WCHAR* szSymbolicLink = NULL;
+		UINT32 cchLink;
+		ppDevices[i]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &szSymbolicLink, &cchLink);
+		QString strSymbolicLink = QString::fromWCharArray(szSymbolicLink);
+		std::string strVid, strPid;
+		EZCamera::extractVidPid(strSymbolicLink.toStdString(), strVid, strPid);
+		CoTaskMemFree(szSymbolicLink);
+
+		strName = strName + "_" + QString::fromStdString(strVid) + "_" + QString::fromStdString(strPid);
 		if (this->m_strName == strName)
 		{
 			hr = pActivate->ActivateObject(IID_PPV_ARGS(&pSource));
@@ -1549,5 +1566,35 @@ void EZCamera::releaseControlInterfaces()
 		((IBaseFilter*)this->m_pCapFilter)->Release();
 		this->m_pCapFilter = nullptr;
 	}
+}
+
+bool EZCamera::extractVidPid(const std::string& strSymbolicLink, std::string& vid, std::string& pid)
+{
+	// 示例格式：\\?\usb#vid_046d&pid_0825&mi_00#7&2b9cbb1b&0&0000#{e5323777-f976-4f5b-9b55-b94699c46e44}\global
+	// 不区分大小写匹配 vid_xxxx 和 pid_xxxx
+	std::regex re(R"((vid_[0-9a-fA-F]{4}).*?(pid_[0-9a-fA-F]{4}))", std::regex::icase);
+	std::smatch match;
+
+	if (std::regex_search(strSymbolicLink, match, re))
+	{
+		vid = match[1].str();
+		pid = match[2].str();
+
+		// 转成小写，便于统一
+		std::transform(vid.begin(), vid.end(), vid.begin(), ::tolower);
+		std::transform(pid.begin(), pid.end(), pid.begin(), ::tolower);
+		if (vid.find("vid_") == 0)
+		{
+			vid = vid.substr(4);
+		}
+		if (pid.find("pid_") == 0)
+		{
+			pid = pid.substr(4);
+		}
+
+		return true;
+	}
+
+	return false;
 }
 

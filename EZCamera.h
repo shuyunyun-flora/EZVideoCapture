@@ -46,7 +46,8 @@ private:
 public:
 	static QList<CameraInfo> getAvailableCameraNames();
 	static bool getExposureRangeTest(QString strCameraName, long& min, long& max, long& step, long& def, long& flags);
-	
+	static bool extractVidPid(const std::string& symbolicLink, std::string& vid, std::string& pid);
+
 public Q_SLOTS:
 	void start();
 	void stop();
