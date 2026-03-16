@@ -700,12 +700,30 @@ static bool FindVideoCaptureFilterByName(const QString& friendlyName, IBaseFilte
 			if (SUCCEEDED(hr) && varName.vt == VT_BSTR)
 			{
 				QString name = QString::fromWCharArray(varName.bstrVal);
-				if (name == friendlyName)
+				VARIANT varDevicePath;
+				VariantInit(&varDevicePath);
+				hr = pBag->Read(L"DevicePath", &varDevicePath, 0);
+				QString strUniqueId;
+				if (SUCCEEDED(hr) && varDevicePath.vt == VT_BSTR)
+				{
+					QString devicePath = QString::fromWCharArray(varDevicePath.bstrVal);
+					qDebug() << "Found video capture device: " << name << ", path: " << devicePath;
+					std::string id;
+					EZCamera::extractUniqueId(devicePath.toStdString(), id);
+					strUniqueId = QString::fromStdString(id);
+				}
+
+				QString strNameWithUniqueId = name + "_" + strUniqueId;
+				if (strNameWithUniqueId == friendlyName)
 				{
 					hr = pMoniker->BindToObject(nullptr, nullptr, IID_PPV_ARGS(ppFilter));
 					if (SUCCEEDED(hr))
+					{
 						found = true;
+					}
 				}
+
+				VariantClear(&varDevicePath);
 			}
 
 			VariantClear(&varName);
