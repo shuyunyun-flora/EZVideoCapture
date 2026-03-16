@@ -1137,12 +1137,11 @@ QList<CameraInfo> EZCamera::getAvailableCameraNames()
 		UINT32 cchLink;
 		ppDevices[i]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &szSymbolicLink, &cchLink);
 		QString strSymbolicLink = QString::fromWCharArray(szSymbolicLink);
-		std::string strVid, strPid;
-		EZCamera::extractVidPid(strSymbolicLink.toStdString(), strVid, strPid);
-
+		std::string strUniqueId;
+		EZCamera::extractUniqueId(strSymbolicLink.toStdString(), strUniqueId);
 		CoTaskMemFree(szSymbolicLink);
 
-		strName = strName + "_" + QString::fromStdString(strVid) + "_" + QString::fromStdString(strPid);
+		strName = strName + "_" + QString::fromStdString(strUniqueId);
 		lst.append(CameraInfo(strName, strSymbolicLink));
 	}
 
@@ -1209,11 +1208,10 @@ bool EZCamera::CreateVideoDeviceSource(void** ppSource)
 		UINT32 cchLink;
 		ppDevices[i]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &szSymbolicLink, &cchLink);
 		QString strSymbolicLink = QString::fromWCharArray(szSymbolicLink);
-		std::string strVid, strPid;
-		EZCamera::extractVidPid(strSymbolicLink.toStdString(), strVid, strPid);
+		std::string strUniqueId;
+		EZCamera::extractUniqueId(strSymbolicLink.toStdString(), strUniqueId);
 		CoTaskMemFree(szSymbolicLink);
-
-		strName = strName + "_" + QString::fromStdString(strVid) + "_" + QString::fromStdString(strPid);
+		strName = strName + "_" + QString::fromStdString(strUniqueId);
 		if (this->m_strName == strName)
 		{
 			hr = pActivate->ActivateObject(IID_PPV_ARGS(&pSource));
@@ -1596,5 +1594,32 @@ bool EZCamera::extractVidPid(const std::string& strSymbolicLink, std::string& vi
 	}
 
 	return false;
+}
+
+bool EZCamera::extractUniqueId(const std::string& strSymbolicLink, std::string& uniqueId)
+{
+	std::string path = strSymbolicLink;
+	uniqueId.clear();
+
+	size_t p1 = path.find('#');
+	if (p1 == std::string::npos) return false;
+
+	size_t p2 = path.find('#', p1 + 1);
+	if (p2 == std::string::npos) return false;
+
+	size_t p3 = path.find('#', p2 + 1);
+	if (p3 == std::string::npos) return false;
+
+	std::string instancePart = path.substr(p2 + 1, p3 - p2 - 1);
+	// 例如：7&2b9cbb1b&0&0000
+
+	size_t a1 = instancePart.find('&');
+	if (a1 == std::string::npos) return false;
+
+	size_t a2 = instancePart.find('&', a1 + 1);
+	if (a2 == std::string::npos) return false;
+
+	uniqueId = instancePart.substr(a1 + 1, a2 - a1 - 1);
+	return !uniqueId.empty();
 }
 
