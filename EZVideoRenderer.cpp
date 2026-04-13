@@ -155,6 +155,13 @@ void EZVideoRenderer::paintGL()
 
     if (bNoFrame)
     {
+        EZVideoCaptureWindow* pWnd = qobject_cast<EZVideoCaptureWindow*>(this->window());
+        if (pWnd != nullptr)
+        {
+            pWnd->setInFPSText("");
+            pWnd->setRenderFPSText("");
+        }
+
         return;
     }
 

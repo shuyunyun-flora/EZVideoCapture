@@ -311,8 +311,8 @@ void EZVideoCaptureWindow::initLayout()
 
 	m_pChkFlipH = new QCheckBox(tr("Flip Horizontally"), pBottomPanel);
 	m_pChkFlipV = new QCheckBox(tr("Flip Vertically"), pBottomPanel);
-	m_pLblInPFS = new QLabel(tr("In FPS:"), pBottomPanel);
-	m_pLblRenderFPS = new QLabel(tr("Render FPS:"), pBottomPanel);
+	m_pLblInPFS = new QLabel(tr(""), pBottomPanel);
+	m_pLblRenderFPS = new QLabel(tr(""), pBottomPanel);
 
 	pRow2->addWidget(m_pChkFlipH);
 	pRow2->addWidget(m_pChkFlipV);
@@ -552,6 +552,11 @@ void EZVideoCaptureWindow::onCameraDeviceChanged(QString strSymbolicLink, bool b
 					break;
 				}
 			}
+		}
+		else
+		{
+			this->m_pLblInPFS->setText("");
+			this->m_pLblRenderFPS->setText("");
 		}
 
 		this->m_bEnumeratingCameras = false;
