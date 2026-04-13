@@ -64,6 +64,22 @@ void EZVideoCaptureWindow::closeEvent(QCloseEvent* event)
 	QMainWindow::closeEvent(event);
 }
 
+void EZVideoCaptureWindow::setInFPSText(QString strText)
+{
+	if (this->m_pLblInPFS != nullptr)
+	{
+		this->m_pLblInPFS->setText(strText);
+	}
+}
+
+void EZVideoCaptureWindow::setRenderFPSText(QString strText)
+{
+	if (this->m_pLblRenderFPS != nullptr)
+	{
+		this->m_pLblRenderFPS->setText(strText);
+	}
+}
+
 #ifdef Q_OS_WIN
 void EZVideoCaptureWindow::registerCameraDeviceNotification()
 {
@@ -214,7 +230,6 @@ void EZVideoCaptureWindow::initLayout()
 	connect(this->m_pBtnTakePhoto, &QPushButton::clicked, this->m_pVideoRenderer, &EZVideoRenderer::onTakePhoto);
 
 	// 底部面板
-	// 底部面板
 	auto* pBottomPanel = new QWidget(this);
 	auto* pBottomLayout = new QVBoxLayout(pBottomPanel);
 	pBottomLayout->setContentsMargins(0, 0, 0, 0);
@@ -296,10 +311,15 @@ void EZVideoCaptureWindow::initLayout()
 
 	m_pChkFlipH = new QCheckBox(tr("Flip Horizontally"), pBottomPanel);
 	m_pChkFlipV = new QCheckBox(tr("Flip Vertically"), pBottomPanel);
+	m_pLblInPFS = new QLabel(tr("In FPS:"), pBottomPanel);
+	m_pLblRenderFPS = new QLabel(tr("Render FPS:"), pBottomPanel);
 
 	pRow2->addWidget(m_pChkFlipH);
 	pRow2->addWidget(m_pChkFlipV);
 	pRow2->addStretch();
+	pRow2->addWidget(m_pLblInPFS);
+	pRow2->addSpacing(8);
+	pRow2->addWidget(m_pLblRenderFPS);
 
 	pBottomLayout->addLayout(pRow2);
 

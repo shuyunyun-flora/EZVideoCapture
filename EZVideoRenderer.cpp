@@ -14,6 +14,7 @@
 #include <QStandardPaths>
 
 #include "EZCameraDeviceErrorEvent.h"
+#include "EZVideoCaptureWindow.h"
 
 EZVideoRenderer::EZVideoRenderer(QWidget *parent)
 	: QOpenGLWidget(parent)
@@ -34,6 +35,9 @@ EZVideoRenderer::EZVideoRenderer(QWidget *parent)
     m_pStatusLabel->setAttribute(Qt::WA_TransparentForMouseEvents, true);
     m_pStatusLabel->adjustSize();
     m_pStatusLabel->raise();
+
+    m_fpsTimerIn.start();
+    m_fpsTimerRender.start();
 }
 
 EZVideoRenderer::~EZVideoRenderer()
@@ -255,6 +259,22 @@ void EZVideoRenderer::paintGL()
     glDisableVertexAttribArray(1);
 
     m_program.release();
+
+    // 统计渲染 FPS
+    ++m_renderFrameCount;
+    qint64 ms = m_fpsTimerRender.elapsed();
+    if (ms >= 1000)
+    {
+        m_renderFps = m_renderFrameCount * 1000.0 / ms;
+        m_renderFrameCount = 0;
+        m_fpsTimerRender.restart();
+
+        EZVideoCaptureWindow* pWnd = qobject_cast<EZVideoCaptureWindow*>(this->window());
+        if (pWnd != nullptr)
+        {
+            pWnd->setRenderFPSText(QString("Render: %1 FPS").arg(m_renderFps, 0, 'f', 1));
+        }
+    }
 }
 
 bool EZVideoRenderer::event(QEvent* e)
@@ -357,6 +377,22 @@ void EZVideoRenderer::onFrameReady(const QByteArray& nv12,
         }
 
         this->m_strStatus = "";
+
+        // 统计输入 FPS
+        ++m_inFrameCount;
+        qint64 ms = m_fpsTimerIn.elapsed();
+        if (ms >= 1000)
+        {
+            m_inputFps = m_inFrameCount * 1000.0 / ms;
+            m_inFrameCount = 0;
+            m_fpsTimerIn.restart();
+
+            EZVideoCaptureWindow* pWnd = qobject_cast<EZVideoCaptureWindow*>(this->window());
+            if (pWnd != nullptr)
+            {
+                pWnd->setInFPSText(QString("In: %1 FPS").arg(m_inputFps, 0, 'f', 1));
+            }
+        }
     }
 
     // 触发重绘（在 GUI 线程执行）

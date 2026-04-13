@@ -7,6 +7,7 @@
 #include <QMutex>
 #include <QTimer>
 #include <QLabel>
+#include <QElapsedTimer>
 
 class EZVideoRenderer : public QOpenGLWidget, protected QOpenGLExtraFunctions
 {
@@ -81,5 +82,14 @@ private:
     QString m_strError;
 
 	QLabel* m_pStatusLabel = nullptr;
+
+    QElapsedTimer m_fpsTimerIn;
+    QElapsedTimer m_fpsTimerRender;
+
+    int m_inFrameCount = 0;
+    int m_renderFrameCount = 0;
+
+    double m_inputFps = 0.0;
+    double m_renderFps = 0.0;
 };
 
