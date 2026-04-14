@@ -45,6 +45,13 @@ void EZVideoCaptureWindow::showEvent(QShowEvent* event)
 {
 	QMainWindow::showEvent(event);
 
+	static bool firstShow = true;
+	if (firstShow)
+	{
+		this->showFpsInfo(false);
+		firstShow = false;
+	}
+
 #ifdef Q_OS_WIN
 	static bool s_registered = false;
 	if (!s_registered)
@@ -82,22 +89,30 @@ void EZVideoCaptureWindow::setRenderFPSText(QString strText)
 
 void EZVideoCaptureWindow::showFpsInfo(bool bShow)
 {
-	if (this->m_pLblInPFS != nullptr)
+	if (m_bFpsInfoVisible == bShow)
 	{
-		this->m_pLblInPFS->setVisible(bShow);
+		return;
 	}
-	if (this->m_pLblRenderFPS != nullptr)
+	m_bFpsInfoVisible = bShow;
+
+	if (m_pLblInPFS)
 	{
-		this->m_pLblRenderFPS->setVisible(bShow);
+		if (!bShow)
+		{
+			m_pLblInPFS->setText("");
+		}
+		m_pLblInPFS->setVisible(bShow);
 	}
-	if (this->m_pLblPreviewFps != nullptr)
+	if (m_pLblRenderFPS)
 	{
-		this->m_pLblPreviewFps->setVisible(bShow);
+		if (!bShow)
+		{
+			m_pLblRenderFPS->setText("");
+		}
+		m_pLblRenderFPS->setVisible(bShow);
 	}
-	if (this->m_pCmbPreviewFps != nullptr)
-	{
-		this->m_pCmbPreviewFps->setVisible(bShow);
-	}
+	if (m_pLblPreviewFps) m_pLblPreviewFps->setVisible(bShow);
+	if (m_pCmbPreviewFps) m_pCmbPreviewFps->setVisible(bShow);
 }
 
 #ifdef Q_OS_WIN
@@ -340,7 +355,6 @@ void EZVideoCaptureWindow::initLayout()
 
 	m_pLblPreviewFps = new QLabel(tr("FPS:"), pBottomPanel);
 	m_pLblPreviewFps->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-
 	m_pCmbPreviewFps = new QComboBox(pBottomPanel);
 	m_pCmbPreviewFps->setFixedWidth(80);
 	m_pCmbPreviewFps->addItem("Sync");
@@ -350,7 +364,6 @@ void EZVideoCaptureWindow::initLayout()
 	m_pCmbPreviewFps->addItem("20");
 	m_pCmbPreviewFps->addItem("30");
 	m_pCmbPreviewFps->setCurrentIndex(0);
-
 	pPreviewLayout->addWidget(m_pLblPreviewFps);
 	pPreviewLayout->addWidget(m_pCmbPreviewFps);
 
@@ -617,11 +630,6 @@ void EZVideoCaptureWindow::onCameraDeviceChanged(QString strSymbolicLink, bool b
 				}
 			}
 		}
-		else
-		{
-			this->m_pLblInPFS->setText("");
-			this->m_pLblRenderFPS->setText("");
-		}
 
 		this->m_bEnumeratingCameras = false;
 		});
@@ -631,6 +639,7 @@ void EZVideoCaptureWindow::startCamera(QString strName)
 {
 	if (strName == "None")
 	{
+		this->showFpsInfo(false);
 		return;
 	}
 
@@ -747,6 +756,7 @@ void EZVideoCaptureWindow::startCamera(QString strName)
 
 	this->m_pVideoRenderer->start();
 
+	this->showFpsInfo(true);
 }
 
 void EZVideoCaptureWindow::stopCamera()

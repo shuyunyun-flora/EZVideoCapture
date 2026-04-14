@@ -57,6 +57,7 @@ protected:
 private:
     void initTexturesIfNeeded();
     void updateStatusLabelPosition();
+    void resetFpsInfo();
 
 private:
     QMutex m_mutex;

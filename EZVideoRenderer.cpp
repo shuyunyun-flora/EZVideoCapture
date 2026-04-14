@@ -40,8 +40,9 @@ EZVideoRenderer::EZVideoRenderer(QWidget *parent)
     m_fpsTimerRender.start();
 
     m_pPresentTick = new QTimer(this);
+	m_pPresentTick->setTimerType(Qt::PreciseTimer);
     connect(m_pPresentTick, &QTimer::timeout, this, [this]() {
-        if (m_nPresentFps > 0 && m_hasFrame && !m_bStopped)
+        if (m_nPresentFps > 0 && m_hasFrame && !m_bStopped && !m_bErrorOccured)
         {
             update();
         }
@@ -175,21 +176,7 @@ void EZVideoRenderer::paintGL()
 
     if (bNoFrame)
     {
-        if (this->m_pParentWnd != nullptr)
-        {
-            m_pParentWnd->setInFPSText("");
-            m_pParentWnd->setRenderFPSText("");
-            m_pParentWnd->showFpsInfo(false);
-        }
-
         return;
-    }
-    else
-    {
-        if (this->m_pParentWnd != nullptr)
-        {
-			m_pParentWnd->showFpsInfo(true);
-        }
     }
 
     m_width = width;   // 给 initTexturesIfNeeded 用
@@ -306,7 +293,7 @@ void EZVideoRenderer::paintGL()
         EZVideoCaptureWindow* pWnd = qobject_cast<EZVideoCaptureWindow*>(this->window());
         if (pWnd != nullptr)
         {
-            pWnd->setRenderFPSText(QString("Render: %1 FPS").arg(m_renderFps, 0, 'f', 1));
+            pWnd->setRenderFPSText(QString("Render: %1 FPS").arg(qRound(m_renderFps)));
         }
     }
 }
@@ -363,6 +350,7 @@ void EZVideoRenderer::stop()
     }
 	this->m_strStatus = "No Frame";
 	this->m_pStatusLabel->setText(m_strStatus);
+    this->resetFpsInfo();
 
     this->update();
 }   
@@ -424,15 +412,20 @@ void EZVideoRenderer::onFrameReady(const QByteArray& nv12,
             EZVideoCaptureWindow* pWnd = qobject_cast<EZVideoCaptureWindow*>(this->window());
             if (pWnd != nullptr)
             {
-                pWnd->setInFPSText(QString("In: %1 FPS").arg(m_inputFps, 0, 'f', 1));
+                pWnd->setInFPSText(QString("In: %1 FPS").arg(qRound(m_inputFps)));
             }
         }
     }
 
+
+	this->m_pStatusLabel->setText(m_strStatus);
+    if (!this->m_hasFrame)
+    {
+        this->resetFpsInfo();
+	}
+
     // 触发重绘（在 GUI 线程执行）
     // 如果 setFrame 是在其它线程调用，务必用 Qt::QueuedConnection 连接这个槽
-	this->m_pStatusLabel->setText(m_strStatus);
-
     if (m_nPresentFps <= 0)
     {
         update();
@@ -635,6 +628,15 @@ void EZVideoRenderer::updateStatusLabelPosition()
     const int y = (height() - labelHeight) / 2;
 
     m_pStatusLabel->setGeometry(x, y, w, labelHeight);
+}
+
+void EZVideoRenderer::resetFpsInfo()
+{
+    if (this->m_pParentWnd != nullptr)
+    {
+        this->m_pParentWnd->setInFPSText("");
+        this->m_pParentWnd->setRenderFPSText("");
+	}
 }
 
 void EZVideoRenderer::resizeEvent(QResizeEvent* event)

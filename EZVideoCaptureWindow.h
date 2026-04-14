@@ -77,6 +77,7 @@ private:
 	QLabel* m_pLblRenderFPS = nullptr;
 	QComboBox* m_pCmbPreviewFps = nullptr;
 	QLabel* m_pLblPreviewFps = nullptr;
+	bool m_bFpsInfoVisible = true;
 
 	long m_lExposureValue = 0;
 	long m_lBrightnessValue = 0;
