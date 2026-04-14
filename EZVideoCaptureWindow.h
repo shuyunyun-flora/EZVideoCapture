@@ -24,6 +24,7 @@ public:
 public:
 	void setInFPSText(QString strText);
 	void setRenderFPSText(QString strText);
+	void showFpsInfo(bool bShow);
 
 protected:
 	void showEvent(QShowEvent* event) override;
@@ -74,6 +75,8 @@ private:
 	QCheckBox* m_pChkFlipV = nullptr;
 	QLabel* m_pLblInPFS = nullptr;
 	QLabel* m_pLblRenderFPS = nullptr;
+	QComboBox* m_pCmbPreviewFps = nullptr;
+	QLabel* m_pLblPreviewFps = nullptr;
 
 	long m_lExposureValue = 0;
 	long m_lBrightnessValue = 0;

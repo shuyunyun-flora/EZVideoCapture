@@ -80,6 +80,26 @@ void EZVideoCaptureWindow::setRenderFPSText(QString strText)
 	}
 }
 
+void EZVideoCaptureWindow::showFpsInfo(bool bShow)
+{
+	if (this->m_pLblInPFS != nullptr)
+	{
+		this->m_pLblInPFS->setVisible(bShow);
+	}
+	if (this->m_pLblRenderFPS != nullptr)
+	{
+		this->m_pLblRenderFPS->setVisible(bShow);
+	}
+	if (this->m_pLblPreviewFps != nullptr)
+	{
+		this->m_pLblPreviewFps->setVisible(bShow);
+	}
+	if (this->m_pCmbPreviewFps != nullptr)
+	{
+		this->m_pCmbPreviewFps->setVisible(bShow);
+	}
+}
+
 #ifdef Q_OS_WIN
 void EZVideoCaptureWindow::registerCameraDeviceNotification()
 {
@@ -314,9 +334,31 @@ void EZVideoCaptureWindow::initLayout()
 	m_pLblInPFS = new QLabel(tr(""), pBottomPanel);
 	m_pLblRenderFPS = new QLabel(tr(""), pBottomPanel);
 
+	auto* pPreviewLayout = new QHBoxLayout();
+	pPreviewLayout->setContentsMargins(0, 0, 0, 0);
+	pPreviewLayout->setSpacing(4);   // 这里控制 FPS 和 ComboBox 的距离
+
+	m_pLblPreviewFps = new QLabel(tr("FPS:"), pBottomPanel);
+	m_pLblPreviewFps->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+
+	m_pCmbPreviewFps = new QComboBox(pBottomPanel);
+	m_pCmbPreviewFps->setFixedWidth(80);
+	m_pCmbPreviewFps->addItem("Sync");
+	m_pCmbPreviewFps->addItem("5");
+	m_pCmbPreviewFps->addItem("10");
+	m_pCmbPreviewFps->addItem("15");
+	m_pCmbPreviewFps->addItem("20");
+	m_pCmbPreviewFps->addItem("30");
+	m_pCmbPreviewFps->setCurrentIndex(0);
+
+	pPreviewLayout->addWidget(m_pLblPreviewFps);
+	pPreviewLayout->addWidget(m_pCmbPreviewFps);
+
 	pRow2->addWidget(m_pChkFlipH);
 	pRow2->addWidget(m_pChkFlipV);
 	pRow2->addStretch();
+	pRow2->addLayout(pPreviewLayout);
+	pRow2->addSpacing(8);
 	pRow2->addWidget(m_pLblInPFS);
 	pRow2->addSpacing(8);
 	pRow2->addWidget(m_pLblRenderFPS);
@@ -404,6 +446,28 @@ void EZVideoCaptureWindow::initLayout()
 	// 竖直翻转
 	connect(this->m_pChkFlipV, &QCheckBox::toggled, this, [this](bool checked) {
 		this->m_pVideoRenderer->setFlipVertical(checked);
+		});
+
+	// 预览FPS
+	connect(this->m_pCmbPreviewFps, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+		if (nullptr == this->m_pVideoRenderer)
+		{
+			return;
+		}
+		QString strText = this->m_pCmbPreviewFps->currentText();
+		if (strText == "Sync")
+		{
+			this->m_pVideoRenderer->setPreviewPresentFps(0);
+		}
+		else
+		{
+			bool ok = false;
+			int fps = strText.toInt(&ok);
+			if (ok)
+			{
+				this->m_pVideoRenderer->setPreviewPresentFps(fps);
+			}
+		}
 		});
 }
 

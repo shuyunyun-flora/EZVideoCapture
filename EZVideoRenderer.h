@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QElapsedTimer>
 
+class EZVideoCaptureWindow;
 class EZVideoRenderer : public QOpenGLWidget, protected QOpenGLExtraFunctions
 {
 	Q_OBJECT
@@ -20,6 +21,7 @@ public:
 public:
     void setFlipHorizontal(bool enable);
     void setFlipVertical(bool enable);
+	void setPreviewPresentFps(int fps);    // fps <= 0 表示 sync.
 
 protected:
     bool event(QEvent* event) override;
@@ -50,6 +52,7 @@ protected:
 	void initializeGL() override;
 	void resizeGL(int width, int height) override;
 	void paintGL() override;
+	void showEvent(QShowEvent* event) override;
 
 private:
     void initTexturesIfNeeded();
@@ -91,5 +94,8 @@ private:
 
     double m_inputFps = 0.0;
     double m_renderFps = 0.0;
+    EZVideoCaptureWindow* m_pParentWnd = nullptr;
+    QTimer* m_pPresentTick = nullptr;
+    int m_nPresentFps = 0;                  // 0 表示sync.
 };
 

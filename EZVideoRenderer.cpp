@@ -38,6 +38,14 @@ EZVideoRenderer::EZVideoRenderer(QWidget *parent)
 
     m_fpsTimerIn.start();
     m_fpsTimerRender.start();
+
+    m_pPresentTick = new QTimer(this);
+    connect(m_pPresentTick, &QTimer::timeout, this, [this]() {
+        if (m_nPresentFps > 0 && m_hasFrame && !m_bStopped)
+        {
+            update();
+        }
+		});
 }
 
 EZVideoRenderer::~EZVideoRenderer()
@@ -56,6 +64,18 @@ EZVideoRenderer::~EZVideoRenderer()
 	m_program.removeAllShaders();
 
 	doneCurrent();
+}
+
+void EZVideoRenderer::showEvent(QShowEvent* event)
+{
+    QOpenGLWidget::showEvent(event);
+
+    static bool first = true;
+    if (first)
+    {
+        first = false;
+        this->m_pParentWnd = qobject_cast<EZVideoCaptureWindow*>(this->window());
+	}
 }
 
 void EZVideoRenderer::initializeGL()
@@ -155,14 +175,21 @@ void EZVideoRenderer::paintGL()
 
     if (bNoFrame)
     {
-        EZVideoCaptureWindow* pWnd = qobject_cast<EZVideoCaptureWindow*>(this->window());
-        if (pWnd != nullptr)
+        if (this->m_pParentWnd != nullptr)
         {
-            pWnd->setInFPSText("");
-            pWnd->setRenderFPSText("");
+            m_pParentWnd->setInFPSText("");
+            m_pParentWnd->setRenderFPSText("");
+            m_pParentWnd->showFpsInfo(false);
         }
 
         return;
+    }
+    else
+    {
+        if (this->m_pParentWnd != nullptr)
+        {
+			m_pParentWnd->showFpsInfo(true);
+        }
     }
 
     m_width = width;   // 给 initTexturesIfNeeded 用
@@ -405,7 +432,11 @@ void EZVideoRenderer::onFrameReady(const QByteArray& nv12,
     // 触发重绘（在 GUI 线程执行）
     // 如果 setFrame 是在其它线程调用，务必用 Qt::QueuedConnection 连接这个槽
 	this->m_pStatusLabel->setText(m_strStatus);
-    update();
+
+    if (m_nPresentFps <= 0)
+    {
+        update();
+    }
 }
 
 void EZVideoRenderer::onFrameInfo(QString strInfo)
@@ -534,6 +565,19 @@ void EZVideoRenderer::setFlipVertical(bool enable)
 {
     m_bFlipVertical = enable;
     update();
+}
+
+void EZVideoRenderer::setPreviewPresentFps(int fps)
+{
+    m_nPresentFps = fps;
+    if (fps <= 0)
+    {
+        m_pPresentTick->stop();
+    }
+    else
+    {
+        m_pPresentTick->start((int)1000.0 / fps);
+    }
 }
 
 void EZVideoRenderer::initTexturesIfNeeded()
