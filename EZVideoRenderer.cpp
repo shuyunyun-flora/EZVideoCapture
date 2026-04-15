@@ -321,7 +321,7 @@ bool EZVideoRenderer::event(QEvent* e)
         // 无法保证是EZCameraDeviceErrorEvent先处理还是OnFrameReady先处理，(也就是上一帧正常，下一帧就出错了，哪个事件先到达这个 renderer)，
         // 所以这里设置 m_bErrorOccured = true，在OnFrameReady中禁止再显示帧了.
 		this->m_bErrorOccured = true;                   
-
+        this->resetFpsInfo();
         this->update();
 
         return true;
