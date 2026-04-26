@@ -54,6 +54,11 @@ protected:
 	void paintGL() override;
 	void showEvent(QShowEvent* event) override;
 
+protected:
+    void wheelEvent(QWheelEvent* event) override;
+	void mousePressEvent(QMouseEvent* event) override;
+    QMatrix4x4 m_transform;
+
 private:
     void initTexturesIfNeeded();
     void updateStatusLabelPosition();

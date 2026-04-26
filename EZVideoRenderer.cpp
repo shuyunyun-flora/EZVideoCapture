@@ -79,6 +79,29 @@ void EZVideoRenderer::showEvent(QShowEvent* event)
 	}
 }
 
+void EZVideoRenderer::wheelEvent(QWheelEvent* event)
+{
+    if (event->angleDelta().y() > 0) 
+    {
+        m_transform.scale(1.1);
+    }
+    else 
+    {
+        m_transform.scale(0.9);
+    }
+
+    update();
+}
+
+void EZVideoRenderer::mousePressEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::RightButton) 
+    {
+        m_transform = QMatrix4x4();
+		update();
+    }
+}
+
 void EZVideoRenderer::initializeGL()
 {
 	this->initializeOpenGLFunctions();
@@ -104,10 +127,11 @@ void EZVideoRenderer::initializeGL()
     static const char* vsrc = R"(#version 330 core
         layout(location = 0) in vec2 aPos;
         layout(location = 1) in vec2 aTex;
+        uniform mat4 modelViewMatrix; // Transformation matrix
         out vec2 vTex;
         void main()
         {
-            gl_Position = vec4(aPos, 0.0, 1.0);
+            gl_Position = modelViewMatrix * vec4(aPos, 0.0, 1.0);
             vTex = aTex;
         }
     )";
@@ -223,9 +247,12 @@ void EZVideoRenderer::paintGL()
 
     // ---- 绘制 ----
     if (!m_program.isLinked())
+    {
         return;
+    }
 
     m_program.bind();
+    m_program.setUniformValue("modelViewMatrix", m_transform);
     m_program.setUniformValue("texY", 0);
     m_program.setUniformValue("texUV", 1);
 
